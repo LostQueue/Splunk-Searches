@@ -1,0 +1,65 @@
+Auth Failure search "Threat Detection"
+    fail* password ""Wildcard search for failures"" "" Best to tag src,user, and dest"host"""
+        fail* password | stats count by src, dest, user, sourcetype | sort - count | where > "Insert amount of failure attempts"
+        
+ Threat Scoping
+     src="Target IP" dest="insert dest" 
+         ""COMMENTTXT"" for session information ""SQLTEXT"" for query against server
+             "" | table _time, src, dest, user, COMMENTTXT, SQLTEXT "" to table data
+             
+ Calculating time gap
+     sourcetype="insert"
+     | streamstats current=f last(_time) as next_time by dest
+     | eval gap = next_time - _time  ""adds field "gap" with time gap intervals""
+     | stats count, avg(gap) as avg_gap, var(gap) as var_gap by dest src
+     | search avg_gap<50 count>500
+     | sort avg_gap
+     
+ Most recent 24 hours of data from a firewall
+    sourcetype=netscreen:firewall earliest=-24h 
+    | eval Name=dst 
+    | eval Time=start_time 
+    | lookup rf_ip_threatfeed Name OUTPUT Risk, RiskString, EvidenceDetails 
+    | search Risk != "" 
+    | eval RiskScore = Risk 
+    | eval Rule = spath(EvidenceDetails,"EvidenceDetails{}.Rule")
+    | eval EvidenceString = spath(EvidenceDetails,"EvidenceDetails{}.EvidenceString")
+    | search Risk != "" 
+    | sort -RiskScore 
+    | table Name, Time, RiskScore, RiskString, Rule, EvidenceString 
+    | rename Name as IPAddress
+    
+ Identify risky ip addresses
+      sourcetype=netscreen:firewall earliest=-24h 
+      | eval Name=src + ";" + dst 
+      | makemv delim=";" Name 
+      | mvexpand Name 
+      | eval Time=start_time 
+      | lookup rf_ip_threatfeed Name OUTPUT Risk, RiskString, EvidenceDetails 
+      | search Risk != "" 
+      | eval RiskScore = Risk 
+      | eval Rule = spath(EvidenceDetails,"EvidenceDetails{}.Rule")
+      | eval EvidenceString = spath(EvidenceDetails,"EvidenceDetails{}.EvidenceString")
+      | search Risk != "" 
+      | sort -RiskScore 
+      | table Name, Time, RiskScore, RiskString, Rule, EvidenceString 
+      | rename Name as IPAddress
+      
+ Hash extraction and search
+      sourcetype="symantec:ep:risk:file" earliest=-24h 
+      | rex field=_raw "Application hash: (?<file_hash>[^,]+)" 
+      | eval Name=file_hash 
+      | eval Time=strftime(_time,"%m/%d/%y %I:%M:%S:%p") 
+      | lookup rf_hash_threatfeed Name OUTPUT Risk, RiskString, EvidenceDetails 
+      | search Risk != "" 
+      | eval Rule = spath(EvidenceDetails,"EvidenceDetails{}.Rule")
+      | eval EvidenceString = spath(EvidenceDetails,"EvidenceDetails{}.EvidenceString") 
+      |sort -Risk 
+      | table Name, Time, Risk, RiskString, Rule, EvidenceString 
+      | rename Name as Hash
+      
+ Search for RF data in Splunk Threat Intelligence KV Store
+      | `ip_intel` | search threat_key=rf*
+      
+  Search for IP (e.g., 162.208.22.34) in RF lookup table in Core Splunk
+      | inputlookup rf_ip_threatfeed | search Name=162.208.22.34<
