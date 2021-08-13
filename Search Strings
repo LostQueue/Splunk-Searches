@@ -63,3 +63,13 @@ Auth Failure search "Threat Detection"
       
   Search for IP (e.g., 162.208.22.34) in RF lookup table in Core Splunk
       | inputlookup rf_ip_threatfeed | search Name=162.208.22.34<
+
+ Advanced Malware Detection
+      sourcetype="xmlwineventlog:microsoft-windows-sysmon/operational" EventCode=1 
+      | eval cmdlen=len(commandLine)
+      | eventstats avg(cmdlen) as avg, stdev(cmdlen) as stdev by host
+      | stats max(cmdlen) as maxlen, values(avg) as avgperhost, values(stdev) as stdevperhost by host, CommandLine
+      | eval threshold = 4 * ( stdevperhost + avgperhost )
+      | where maxlen > threshold
+      
+ 
