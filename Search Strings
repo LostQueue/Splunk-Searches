@@ -7,7 +7,7 @@ Auth Failure search "Threat Detection"
          ""COMMENTTXT"" for session information ""SQLTEXT"" for query against server
              "" | table _time, src, dest, user, COMMENTTXT, SQLTEXT "" to table data
              
- Calculating time gap
+ Calculating time gap for Attacks
      sourcetype="insert"
      | streamstats current=f last(_time) as next_time by dest
      | eval gap = next_time - _time  ""adds field "gap" with time gap intervals""
