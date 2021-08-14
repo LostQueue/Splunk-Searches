@@ -2,7 +2,7 @@ Auth Failure search "Threat Detection"
     fail* password ""Wildcard search for failures"" "" Best to tag src,user, and dest"host"""
         fail* password | stats count by src, dest, user, sourcetype | sort - count | where > "Insert amount of failure attempts"
         
- Threat Scoping
+ Threat Scoping for SQL Injection Attacks
      src="Target IP" dest="insert dest" 
          ""COMMENTTXT"" for session information ""SQLTEXT"" for query against server
              "" | table _time, src, dest, user, COMMENTTXT, SQLTEXT "" to table data
