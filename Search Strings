@@ -73,3 +73,11 @@ Auth Failure search "Threat Detection"
       | where maxlen > threshold
       
  
+query for tracking down all internal resources connecting to or from external IPs and Countries
+    src!=10.0.0.0/8 AND src!=192.168.0.0/12 AND src!=172.16.0.0/12 action="allowed"
+| iplocation src 
+| search Country=*
+| table Country, src, action, bytes_out, packets_out 
+| dedup src
+| sort Country
+
