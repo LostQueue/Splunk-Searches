@@ -83,6 +83,7 @@ query for tracking down all internal resources connecting to or from external IP
 
 
 Successful Internal vs External connections
+change the CIDR matches to match your required LANs.
 "sshd" AND "Accepted password" 
  | rex "[a-zA-z]{3}\s\d+\s\d+:\d+:\d+\s[a-zA-Z0-9-.]*\s[a-zA-z]{3}\s\d+\s\d+:\d+:\d+\s(?<hostname>.*)\ssshd\[\d+\]:\sAccepted\spassword\sfor\s(?<username>.*)\sfrom\s(?<sourceip>.*)\sport\s(?<sourceport>.*)\sssh2"
  | eval network=case(cidrmatch("192.168.0.0/24", sourceip),"Internal",
