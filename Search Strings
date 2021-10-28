@@ -91,3 +91,9 @@ change the CIDR matches to match your required LANs.
                      cidrmatch("192.168.20.0/24",sourceip),"Internal",
                      1=1,"External")
 | timechart count(username) by network
+
+
+Sysmon - Outbound Connections by Process
+
+sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=3 Protocol=tcp Initiated=true | eval src=if(isnotnull(SourceHostname), SourceHostname+":"+SourcePort, SourceIp+":"+SourcePort) | eval
+ dest=if(isnotnull(DestinationHostname), DestinationHostname+":"+DestinationPort, DestinationIp+":"+DestinationPort) | eval src_dest=src+ " => " + dest | stats values(src_dest) as Connection by ProcessGuid ProcessId User Computer Image
